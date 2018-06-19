@@ -133,7 +133,7 @@ class runDiscriminator(threading.Thread):
                 self.G_upD_lock.release()
 
 class runGenerator(threading.Thread):
-    def __init__(self, G_upG_tskq, G_upD_tskq, D_upG_tskq, D_upD_tskq, G_upG_lock, G_upD_lock, D_upG_lock, D_upD_lock):
+    def __init__(self, G_upG_tskq, G_upD_tskq, D_upG_tskq, D_upD_tskq, G_upG_lock, G_upD_lock, D_upG_lock, D_upD_lock, index):
         super(runGenerator, self).__init__()
         self.G_upG_tskq = G_upG_tskq
         self.G_upD_tskq = G_upD_tskq
@@ -146,15 +146,16 @@ class runGenerator(threading.Thread):
         # Counter of updateG and updateD, respectively
         self.history = [0, 0]
         self.count = 0
+        self.index = index
 
     def arbitrator(self):
         while True:
-            if self.G_upG_tskq.num() > 0 or self.G_upD_tskq.num() > 0:
+            if self.G_upG_tskq.num_by_index(self.index) > 0 or self.G_upD_tskq.num_by_index(self.index) > 0:
                 break
-        if self.G_upG_tskq.num() == 0:
+        if self.G_upG_tskq.num_by_index(self.index) == 0:
             self.history[1] += 1
             return 1
-        if self.G_upD_tskq.num() == 0:
+        if self.G_upD_tskq.num_by_index(self.index) == 0:
             self.history[0] += 1
             return 0
         if self.history[0] > self.history[1]:
@@ -169,29 +170,29 @@ class runGenerator(threading.Thread):
             doWhat = self.arbitrator()
             if doWhat == 0:
                 self.G_upG_lock.acquire()
-                old_task = self.G_upG_tskq.dequeue()
+                old_task = self.G_upG_tskq.dequeue_by_index(self.index)
                 self.G_upG_lock.release()
                 gindex = old_task.generator_index
                 nn_network = None
                 nn_input = None
                 if old_task.task_type is 'b':
-                    print("%6.8f / Generator %d / updateGenerator @ Generator / backforward / start" % (time.time(), gindex))
+                    print("%6.8f / Generator %d / updateGenerator @ Generator %d / backforward / start" % (time.time(), gindex, self.index))
                     # Do the task
                     #############
                     time.sleep(simulate.b_G)
                     #############
-                    print("%6.8f / Generator %d / updateGenerator @ Generator / backforward / end" % (time.time(), gindex))
+                    print("%6.8f / Generator %d / updateGenerator @ Generator %d / backforward / end" % (time.time(), gindex, self.index))
                     new_task = task.task_t(gindex, 'f', nn_network, nn_input)
                     self.G_upG_lock.acquire()
                     self.G_upG_tskq.enqueue(new_task)
                     self.G_upG_lock.release()
                 elif old_task.task_type is 'f':
-                    print("%6.8f / Generator %d / updateGenerator @ Generator / feedforward / start" % (time.time(), gindex))
+                    print("%6.8f / Generator %d / updateGenerator @ Generator %d / feedforward / start" % (time.time(), gindex, self.index))
                     # Do the task
                     #############
                     time.sleep(simulate.f_G)
                     #############
-                    print("%6.8f / Generator %d / updateGenerator @ Generator / feedforward / end" % (time.time(), gindex))
+                    print("%6.8f / Generator %d / updateGenerator @ Generator %d / feedforward / end" % (time.time(), gindex, self.index))
                     new_task = task.task_t(gindex, 'fbnu', nn_network, nn_input)
                     self.D_upG_lock.acquire()
                     self.D_upG_tskq.enqueue(new_task)
@@ -199,18 +200,18 @@ class runGenerator(threading.Thread):
                     self.count += 1
             else:
                 self.G_upD_lock.acquire()
-                old_task = self.G_upD_tskq.dequeue()
+                old_task = self.G_upD_tskq.dequeue_by_index(self.index)
                 self.G_upD_lock.release()
                 gindex = old_task.generator_index
                 nn_network = None
                 nn_input = None
                 if old_task.task_type is 'f':
-                    print("%6.8f / Generator %d / updateDiscriminator @ Genrator / feedforward / start" % (time.time(), gindex))
+                    print("%6.8f / Generator %d / updateDiscriminator @ Genrator %d / feedforward / start" % (time.time(), gindex, self.index))
                     # Do the task
                     #############
                     time.sleep(simulate.f_G)
                     #############
-                    print("%6.8f / Generator %d / updateDiscriminator @ Genrator / feedforward / end" % (time.time(), gindex))
+                    print("%6.8f / Generator %d / updateDiscriminator @ Genrator %d / feedforward / end" % (time.time(), gindex, self.index))
                     new_task = task.task_t(gindex, 'fbu', nn_network, nn_input)
                     self.D_upD_lock.acquire()
                     self.D_upD_tskq.enqueue(new_task)
