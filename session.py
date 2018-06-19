@@ -58,8 +58,8 @@ class runDiscriminator(threading.Thread):
                 self.D_internal_lock.release()
                 continue
             elif self.isUpdating[0] == True:
+                self.D_internal_lock.release()
                 if self.D_upG_tskq.num() > 0:
-                    self.D_internal_lock.release()
                     self.D_upG_lock.acquire()
                     old_task = self.D_upG_tskq.dequeue()
                     self.D_upG_lock.release()
@@ -76,7 +76,7 @@ class runDiscriminator(threading.Thread):
                     self.G_upG_lock.acquire()
                     self.G_upG_tskq.enqueue(new_task)
                     self.G_upG_lock.release()
-                    continue
+                continue
             self.D_internal_lock.release()
             doWhat = self.arbitrator()
             if doWhat == 0: # Update Generator
