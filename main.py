@@ -19,6 +19,7 @@ isUpdating = [False]
 sharedWeight = None
 
 NUM_OF_GENERATOR = 1
+NUM_OF_DISCRIMINATOR = 2
 
 for i in range(NUM_OF_GENERATOR):
     upG_task = task.task_t(i, 'f', None, None)
@@ -26,16 +27,21 @@ for i in range(NUM_OF_GENERATOR):
     upD_task = task.task_t(i, 'f', None, None)
     G_upD_tskq.enqueue(upD_task)
 
-g1 = session.runGenerator(G_upG_tskq, G_upD_tskq, D_upG_tskq, D_upD_tskq, G_upG_lock, G_upD_lock, D_upG_lock, D_upD_lock)
+glist = []
+dlist = []
 
-d1 = session.runDiscriminator(G_upG_tskq, G_upD_tskq, D_upG_tskq, D_upD_tskq, G_upG_lock, G_upD_lock, D_upG_lock, D_upD_lock, D_internal_lock, isUpdated, whoUpdate, isUpdating, sharedWeight, 0)
+for i in range(NUM_OF_GENERATOR):
+    g = session.runGenerator(G_upG_tskq, G_upD_tskq, D_upG_tskq, D_upD_tskq, G_upG_lock, G_upD_lock, D_upG_lock, D_upD_lock, i)
+    g.start()
+    glist.append(g)
 
-d2 = session.runDiscriminator(G_upG_tskq, G_upD_tskq, D_upG_tskq, D_upD_tskq, G_upG_lock, G_upD_lock, D_upG_lock, D_upD_lock, D_internal_lock, isUpdated, whoUpdate, isUpdating, sharedWeight, 1)
+for i in range(NUM_OF_DISCRIMINATOR):
+    d = session.runDiscriminator(G_upG_tskq, G_upD_tskq, D_upG_tskq, D_upD_tskq, G_upG_lock, G_upD_lock, D_upG_lock, D_upD_lock, D_internal_lock, isUpdated, whoUpdate, isUpdating, sharedWeight, i)
+    d.start()
+    dlist.append(d)
 
-g1.start()
-d1.start()
-d2.start()
+for g in glist:
+    g.join()
 
-g1.join()
-d1.join()
-d2.join()
+for d in dlist:
+    d.join()

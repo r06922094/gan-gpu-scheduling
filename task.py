@@ -24,3 +24,16 @@ class queue_t:
         if len(self.impl) > 0:
             return self.impl.pop(0)
         return None
+
+    def num_by_index(self, generator_index):
+        count = 0
+        for tsk in self.impl:
+            if tsk.generator_index == generator_index:
+                count += 1
+        return count
+
+    def dequeue_by_index(self, generator_index):
+        for i in range(len(self.impl)):
+            if self.impl[i].generator_index == generator_index:
+                return self.impl.pop(i)
+        return None
