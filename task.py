@@ -20,7 +20,7 @@ class task_t:
         self.nn_input_1 = nn_input_1
         self.nn_input_2 = nn_input_2
 
-        self.batch_size = 32
+        self.batch_size = 64
         self.optimizer = optimizer
         self.device_id = device_id
 
