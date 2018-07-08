@@ -27,7 +27,6 @@ class runDiscriminator(threading.Thread):
         # Counter of updateG and updateD, respectively
         self.history = [0, 0]
         self.index = index
-        self.count = 0
 
     def arbitrator(self):
         while True:
@@ -79,7 +78,8 @@ class runDiscriminator(threading.Thread):
                 continue
             self.D_internal_lock.release()
             doWhat = self.arbitrator()
-            if doWhat == 0: # Update Generator
+            # Update the Generator
+            if doWhat == 0:
                 self.D_upG_lock.acquire()
                 old_task = self.D_upG_tskq.dequeue()
                 self.D_upG_lock.release()
@@ -96,6 +96,7 @@ class runDiscriminator(threading.Thread):
                 self.G_upG_lock.acquire()
                 self.G_upG_tskq.enqueue(new_task)
                 self.G_upG_lock.release()
+            # Update the Discrimminator
             else: # Update Discrimminator
                 self.D_upD_lock.acquire()
                 old_task = self.D_upD_tskq.dequeue()
@@ -123,7 +124,6 @@ class runDiscriminator(threading.Thread):
                 print("%6.8f / Discriminator %d Push Shared Weights / end" % (time.time(), self.index))
                 self.isUpdated[0] = True
                 self.whoUpdate[0] = self.index
-                self.count += 1
                 self.D_internal_lock.release()
                 ###################################
 
@@ -145,7 +145,6 @@ class runGenerator(threading.Thread):
         self.D_upD_lock = D_upD_lock
         # Counter of updateG and updateD, respectively
         self.history = [0, 0]
-        self.count = 0
 
     def arbitrator(self):
         while True:
@@ -167,6 +166,7 @@ class runGenerator(threading.Thread):
     def run(self):
         while True:
             doWhat = self.arbitrator()
+            # Update the Generator
             if doWhat == 0:
                 self.G_upG_lock.acquire()
                 old_task = self.G_upG_tskq.dequeue()
@@ -196,7 +196,7 @@ class runGenerator(threading.Thread):
                     self.D_upG_lock.acquire()
                     self.D_upG_tskq.enqueue(new_task)
                     self.D_upG_lock.release()
-                    self.count += 1
+            # Update the Discrimminator
             else:
                 self.G_upD_lock.acquire()
                 old_task = self.G_upD_tskq.dequeue()
