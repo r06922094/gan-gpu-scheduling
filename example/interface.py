@@ -9,6 +9,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 
+cuda = True if torch.cuda.is_available() else False
+Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
+
 def G_f(optimizer, nn_input, nn_graph, batch_size, device_id):
     optimizer.zero_grad()
     #gen_imgs = generator(z)
@@ -24,7 +27,7 @@ def D_upG_fb(nn_input, nn_graph, batch_size, device_id):
     adversarial_loss = torch.nn.BCELoss()
     valid = Variable(Tensor(batch_size, 1).fill_(1.0), requires_grad=False).cuda(device_id)
     #g_loss = adversarial_loss(discriminator(d_input.cuda(1)), valid).cuda(1)
-    g_loss = adversarial_loss(nn_graph(nn_input), valid).cuda(device_id)
+    g_loss = adversarial_loss(nn_graph(nn_input.cuda(device_id)), valid).cuda(device_id)
     g_loss.backward()
 
     return nn_input.grad.data
